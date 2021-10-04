@@ -53,4 +53,115 @@ Lets do this.
 
 ---
 
+Lets start with a simple example. Imagine we want to implement the ring structure for the set of integers numbers, i.e, the set with multiplication and addition. The recursive version of this is:
 
+```scala
+sealed trait Ring 
+case object Zero extends Ring
+case object One extends Ring
+case class Elem(x: Int) extends Ring
+case class Add(x: Ring, y: Ring) extends Ring
+case class Mult(x: Ring, y: Ring) extends Ring
+```
+
+As we have comment in the previous section, we want to separate the base cases for the recursive steps. For this porpouse, lets imagine that our base type is Int and we want to implemente it sum and mult operations. It can be defined in scala as the following:
+
+```scala 
+sealed trait RingF[+A]
+case object Zero extends RingF[Nothing]
+case object One extends RingF[Nothing]
+case class Elem[B](x: Int) extends RingF[Nothing]
+case class Add[A](x: A, y: A) extends RingF[A]
+case class Mult[A](x:A, y: A) extends RingF[A]
+```
+
+For the definition of Ring, we can build a value as deep as we want, for example:
+
+```scala
+val expresion1 = Mult(Elem(4), Add(Elem(3), One))
+```
+![](example.png)
+
+But, for the RingF, we are able to build just base cases like Elem(7), Add(3, 4), etc. 
+
+Lets imagine that we want to evaluate an expresion to, for example, to it associated value after resolving the operations. This can be made by the recursive function:
+
+```scala
+def toInt: Ring => Int = {
+    case Zero => 0
+    case One => 1
+    case Elem(x) => x
+    case Add(x, y) => toInt(x) + toInt(y)
+    case Mult(x, y) => toInt(x) * toInt(y)
+}
+```
+ and in Case we want to define it for RingF we can simply resolve it without recursive calls:
+ 
+```scala
+def evalToInt: RingF[Int] => Int = {
+    x => x match {
+        case Zero => 0
+        case One => 1
+        case Elem(x) => x
+        case Add(x, y) => x + y
+        case Mult(x, y) => x * y
+    }
+}
+```
+
+Here is where the magic comes, if we want to evaluate, for example, a value of the form `RingF[RingF[A]]` we need first and evaluation of the form `RingF[RingF[A]] => RingF[A]` and them another evaluatuion `RingF[A] => A`. In the previous example, A is Int. The way of doing this is based on a good property of RingF, i.e it is a functor. A functor, for our porpouses, is a type constructor with the property that we can implement a way of translating functions between tipes in functions between the constructed types by the type constructor. So for this simple example, for every type A we can build a new type `RingF[A]`. Now, given a function `f: A => B` we need to know how to build a function with the signature `fmap: RingF[A] => RingF[B]`. This can be easily define and implemented in scala in the following way:
+
+```scala 
+trait Functor[F[_]] {
+    def map[A,B](f: A => B): F[A] => F[B]
+}
+
+val ringFunctor = new Functor[RingF] {
+    override def map[A, B](f: A => B): RingF[A] => RingF[B] = {
+        case Zero => Zero
+        case One => One
+        case Elem(x) => Elem(x)
+        case Add(x, y) => Add(f(x), f(y))
+        case Mult(x, y) => Mult(f(x), f(y))
+    }
+}
+
+```
+
+we simply encapsulate the image of f under the RingF constructor. Now that we know how to lift functions using the map property of the functor, we can lift the first step evaluation evaltoInt into a evaluation between `RingF[RingF[A]] => RingF[A]` by simply taking map with `A` as `RingF[A]` and `B` as `A` :
+
+```scala
+def liftInt: RingF[RingF[Int]] => RingF[Int] = {
+    ringFunctor.map(evalToInt)
+}
+```
+
+So, thanks to the map property we know how to lift one floor of recursion our base cases. Our goals now are to define the full recursive expresion and lift out evalToInt to the infinite floor of recursion. 
+
+The argument to do this steps can be formaly made in terms of initial objects of certain cathegory, but let me try to express the idea before geting in details.If we want to find the full recursive type thats mean that we dont case abaout the depth of the expresion of our ring, so we can think about it as a type `H` related to `RingF[A]` and with an infinity depth. Its obious that an object with this two properties must to verified that `RingF[H] = H`, read as, if we are in the infinite recursive step, we dont get nothing if we repeat the aplication of `RingF`. We have to take care with this equaliaty, is better to understand that as _All the information inside `RingF[H]` is insede `H` and the converse is also true_. The equality understood as this property is called an isomorphism between the types `H` and `RingF[H]`. This is why we prefer to call `H` as `Fix[RingF]` because it is a _fixpoint_ of the equation `RingF[H] = H`. So the final signature is `Fix[RingF] = RingF[Fix[RingF]]`. Avoiding the formal and tecnical proofs, we can just implement the previous definition. Even more, this argument works for every Functor `F[A]`, so we can simply write an abstractions like:
+
+```scala
+case class Fix[F[_]](value: F[Fix[F]] )
+object Fix {
+  def fix[F[_]](ff: F[Fix[F]]): Fix[F] = new Fix[F](ff)
+  def unfix[F[_]]: Fix[F] => F[Fix[F]] = f => f.value
+}
+```
+fix and unfix defines the way of translating information back and forth (this functions defines the isomorphism of the fixpoint).
+
+Now, we can build our recursive type Ring by simply fixing the RingF functor:
+
+```scala
+type Ring = Fix[RingF]
+val zero = Fix[RingF](Zero)
+val one =  Fix[RingF](One)
+val elem(x: Int) = Fix[RingF](Elem(x))
+def add: (Ring, Ring) => Ring = (x, y) =>  Fix[RingF](Add(x, y))
+def mult: (Ring, Ring) => Ring = (x, y) =>  Fix[RingF](Mult(x, y))
+```
+and we can build recursive values like:
+
+```scala
+val expresion2 = mult(elem(4), add(elem(3), one))
+```
+![](exam)
