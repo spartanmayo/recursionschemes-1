@@ -1,0 +1,15 @@
+\documentclass[convert={density=300,size=1080x800,outext=.png}]{standalone}
+\usepackage{tikz-cd}
+
+\begin{document}
+
+\begin{tikzcd}
+A \arrow{r}{\phi} \arrow[swap]{d}{\varrho_f} & B \arrow{d}{\varrho_g} \\%
+A_f \arrow{r}{\varphi_f}& B_g
+\end{tikzcd}
+
+\begin{tikzcd}
+{RingF[Fix[RingF]]} \arrow[rr, "map(m)"] \arrow[d, "fix"', bend right] &  & {RingF[Int]} \arrow[d, "evalToInt"] \\
+{Fix[RingF]} \arrow[rr, "m"] \arrow[u, "unfix"', bend right]           &  & Int                                
+\end{tikzcd}
+\end{document} 

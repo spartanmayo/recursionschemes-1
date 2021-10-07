@@ -17,7 +17,7 @@ final case class Suc(n: Nat) extends Nat
 
 sealed trait List[+A]
 final object Nil extends List[Nothing]
-final case class Cons[A](head: A, tail) extends List[A]
+final case class Cons[A](head: A, tail: List[A]) extends List[A]
 ```
 
 In both cases we can see the recursive construction strategy in the Cons and Suc definitions, with an argument defined by its own type. 
@@ -25,7 +25,7 @@ In both cases we can see the recursive construction strategy in the Cons and Suc
 With every recursive structure, there are functions acting on them. We can define recursive functions acting on a inductively defined type, like Nat or Lists. For example, lets define the length of a list:
 
 ```scala
-def length: List[A] => Int = {
+def length[A]: List[A] => Int = {
     case Nil => 0
     case Cons(h, t) => 1 + length(t)
 } 
@@ -70,7 +70,7 @@ As we have comment in the previous section, we want to separate the base cases f
 sealed trait RingF[+A]
 case object Zero extends RingF[Nothing]
 case object One extends RingF[Nothing]
-case class Elem[B](x: Int) extends RingF[Nothing]
+case class Elem(x: Int) extends RingF[Nothing]
 case class Add[A](x: A, y: A) extends RingF[A]
 case class Mult[A](x:A, y: A) extends RingF[A]
 ```
@@ -80,7 +80,7 @@ For the definition of Ring, we can build a value as deep as we want, for example
 ```scala
 val expresion1 = Mult(Elem(4), Add(Elem(3), One))
 ```
-![](example.png)
+![](examples/example.png)
 
 But, for the RingF, we are able to build just base cases like Elem(7), Add(3, 4), etc. 
 
@@ -155,7 +155,7 @@ Now, we can build our recursive type Ring by simply fixing the RingF functor:
 type Ring = Fix[RingF]
 val zero = Fix[RingF](Zero)
 val one =  Fix[RingF](One)
-val elem(x: Int) = Fix[RingF](Elem(x))
+def elem: Int  => Ring = x => Fix[RingF](Elem(x))
 def add: (Ring, Ring) => Ring = (x, y) =>  Fix[RingF](Add(x, y))
 def mult: (Ring, Ring) => Ring = (x, y) =>  Fix[RingF](Mult(x, y))
 ```
@@ -164,4 +164,56 @@ and we can build recursive values like:
 ```scala
 val expresion2 = mult(elem(4), add(elem(3), one))
 ```
-![](exam)
+![](examples/example1.png)
+
+Yow can compare this with expression1. 
+
+We actually have reached the first goal, i.e, to find a recursive abstractionf for our starting, base cased, functor `RingF`. What its left is to take oru way to evaluate this recursive data type starting with our `evalToInt` function.
+
+## F-algebras and Catamorphisms
+
+----
+
+If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has to functions called fix and unfix that, as we alrready said, defines th equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
+
+![](examples/example3.png)
+
+Looking a this diagram, if we want to define `m` we only need to follow the diagram and composing the functions, i.e, taking `m` as `eval o map(m) o unfix`. But, to understand it better, lets see first the case of `RingF` and `evalToInt`:
+
+![](examples/example4.png)
+
+In this case, the recursive call comes from the call `.map(m)`, because `m` is the function we are defining. 
+Of course, the eval function can be parametriced as any function with signature `F[A] => A`. This kind of function is called an F-algebra over the fixed type A.
+
+
+
+Lets start doing it simple. Lets apply it to our basic example `RingF` and `evalToInt`. In this case, our implementation of `m` should be:
+
+```scala
+def cata: Fix[RingF] => Int = {
+    x => evalToInt(ringFunctor.map(cata)(Fix.unfix(x)))
+}
+```
+
+
+```scala
+def cata[F[_], A](implicit F: Functor[F]): Fix[F] => A = {
+    x => evalToInt((F.map(cata(evalToInt))(Fix.unfix(x))))
+}
+```
+
+## Lists and folds
+
+---
+
+## F-coalgebras and Anamorphisms
+
+---
+
+## Hylomorphisms
+
+---
+
+## Further references
+
+---
