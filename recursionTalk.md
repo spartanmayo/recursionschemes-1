@@ -213,8 +213,44 @@ And, with this, we can call it by typing `cata(evalToInt)(ringFunctor)(exp1)`.
 
 ---
 
+If we think about the `evalToInt` function, what this function does is to reduce a tree of operations into an Integer. Imagine that we want to do some converse function, i.e, a function that takes an Int and produces a `Ring`. The signature for this function would be `Int => RingF[Int]`. In a more general case, we can take any fixed type `A` and any functor `F` and write `A => F[A]`. Functions with the previos signature are called F-coalgebras, because of duality with F-algebreas. 
+
+To take an example of this kind of function, we can use a function that, given an integer, produces the esxpression of products of its factors. As we have done previously, lets do this for a base case (just spliting our number in a product of two others) and then we will try to lift this function to produce the full factorization of the given number. 
+
+For the base case, we can write:
+
+```scala
+def FindDivisorsOf(r: Int): RingF[Int] = {
+    def loop(n: Int): RingF[Int] = {
+        n match {
+            case 0 => Zero
+            case 1 => One
+            case x => 
+                if (x >= r) Elem(x)
+                else if (r%x == 0) Mult(r/x, x) 
+                else loop(n+1)
+        }
+    }
+    loop(2)
+}
+
+```
+
+For example, `findDivisorsof(6)` produces `res55: RingF[Int] = Mult(3, 2)`, bu t for `findDivisorsof(12)` we only get `res55: RingF[Int] = Mult(6, 2)` and we may want to keep factorizing the 6 as `Mult(3, 2)`. To do this, we need to produce a new diagram that represent the idea of lifting this function to the `Fix` of `RingF`. This can be done by reading our first diagram, but reversing the arrows:
+
 ![](examples/example6.png)
 
+And, as we did before, we only need to read this diagram to get it implementation. The direct implemnetation, following the same argumens as with `cata`: 
+
+```scala
+def ana[F[_], A](coalg: A => F[A])(implicit F: Functor[F]): A => Fix[F] = {
+    x => Fix((F.map(ana(coalg))(coalg(x))))
+}
+```
+
+As you can see, this new lifter function is called ana. And now, all we need to do is to call `ana(findDivisors)(ringFunctor)(n)` to get a full expresion that represent the factorization of n. For example:
+
+``ca
 ## Hylomorphisms
 
 ---
