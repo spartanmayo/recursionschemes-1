@@ -174,7 +174,7 @@ We actually have reached the first goal, i.e, to find a recursive abstractionf f
 
 ----
 
-If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has to functions called fix and unfix that, as we alrready said, defines th equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
+If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has two functions, called fix and unfix that, as we alrready said, defines the equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
 
 ![](examples/example3.png)
 
@@ -182,33 +182,44 @@ Looking a this diagram, if we want to define `m` we only need to follow the diag
 
 ![](examples/example4.png)
 
-In this case, the recursive call comes from the call `.map(m)`, because `m` is the function we are defining. 
+In this case, the recursive call comes from the call `.map(m)`, because `m` is the function we are defining. In this case, we can implement such function as 
+
+```scala
+def cata: Fix[RingF] => Int = {
+    x => evalToInt(ringFunctor.map(cata)(Fix.unfix(x)))
+}
+val exp1 = mult(elem(4), add(elem(3), one))
+cata(exp1)
+
+res: Int = 16
+```
+So we are done! we achive our goal of lifting evalToInt to our recursive data type `Ring`. But, our implementation of `cata` looks pretty particular for this case. As we can see in our first diagram, we can do this for any functor and for any evaluation, i.e, an algebra over it. Lets do this in the same way, by reading the diagram:
+
 Of course, the eval function can be parametriced as any function with signature `F[A] => A`. This kind of function is called an F-algebra over the fixed type A.
 
 
 
 Lets start doing it simple. Lets apply it to our basic example `RingF` and `evalToInt`. In this case, our implementation of `m` should be:
 
-```scala
-def cata: Fix[RingF] => Int = {
-    x => evalToInt(ringFunctor.map(cata)(Fix.unfix(x)))
-}
-```
-
 
 ```scala
-def cata[F[_], A](implicit F: Functor[F]): Fix[F] => A = {
-    x => evalToInt((F.map(cata(evalToInt))(Fix.unfix(x))))
+def cata[F[_], A](alg: F[A] => A)(implicit F: Functor[F]): Fix[F] => A = {
+    x => alg(F.map(cata(alg))(Fix.unfix(x)))
 }
 ```
+And, with this, we can call it by typing `cata(evalToInt)(ringFunctor)(exp1)`.
 
 ## Lists and folds
 
 ---
 
+In our previous section we've developed the notion of `Fix` and `cata` as the way of lifting functors to recursive data types and functions to evaluate it, respectively. Our main example was the ring structure of the integers. Its time to do it closely to do it with a most common and usefull data Type: lists. What we are gone to try to do is the same as we did before, but with The List functor and, as the evaluator, `foldLeft`.
+
 ## F-coalgebras and Anamorphisms
 
 ---
+
+![](examples/example6.png)
 
 ## Hylomorphisms
 
