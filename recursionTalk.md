@@ -250,7 +250,10 @@ def ana[F[_], A](coalg: A => F[A])(implicit F: Functor[F]): A => Fix[F] = {
 
 As you can see, this new lifter function is called ana. And now, all we need to do is to call `ana(findDivisors)(ringFunctor)(n)` to get a full expresion that represent the factorization of n. For example:
 
-``ca
+```scala
+val expression3 = ana(findDivisorsOf)(ringFunctor)(12)
+```
+![](example5.png)
 ## Hylomorphisms
 
 ---
