@@ -220,7 +220,7 @@ To take an example of this kind of function, we can use a function that, given a
 For the base case, we can write:
 
 ```scala
-def FindDivisorsOf(r: Int): RingF[Int] = {
+def findDivisorsOf(r: Int): RingF[Int] = {
     def loop(n: Int): RingF[Int] = {
         n match {
             case 0 => Zero
