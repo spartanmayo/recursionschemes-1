@@ -209,12 +209,6 @@ def cata[F[_], A](alg: F[A] => A)(implicit F: Functor[F]): Fix[F] => A = {
 ```
 And, with this, we can call it by typing `cata(evalToInt)(ringFunctor)(exp1)`.
 
-## Lists and folds
-
----
-
-In our previous section we've developed the notion of `Fix` and `cata` as the way of lifting functors to recursive data types and functions to evaluate it, respectively. Our main example was the ring structure of the integers. Its time to do it closely to do it with a most common and usefull data Type: lists. What we are gone to try to do is the same as we did before, but with The List functor and, as the evaluator, `foldLeft`.
-
 ## F-coalgebras and Anamorphisms
 
 ---
