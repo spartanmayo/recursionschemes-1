@@ -4,12 +4,21 @@
 \begin{document}
 
 \begin{tikzcd}
-A \arrow{r}{\phi} \arrow[swap]{d}{\varrho_f} & B \arrow{d}{\varrho_g} \\%
+A \arrow{r}{\phi} \arrow[swap]{d}{\varrho_f} & B \arrow{d}{\varrho_g} \\
 A_f \arrow{r}{\varphi_f}& B_g
 \end{tikzcd}
 
 \begin{tikzcd}
 {RingF[Fix[RingF]]} \arrow[rr, "map(m)"] \arrow[d, "fix"', bend right] &  & {RingF[Int]} \arrow[d, "evalToInt"] \\
 {Fix[RingF]} \arrow[rr, "m"] \arrow[u, "unfix"', bend right]           &  & Int                                
+\end{tikzcd}
+
+\begin{tikzcd}
+{F[Fix[F]]} \arrow[d, "fix", bend left] &  & {F[A]} \arrow[ll, "map(m)"']           \\
+{Fix[F]} \arrow[u, "unfix", bend left]  &  & A \arrow[u, "coeval"'] \arrow[ll, "m"]
+\end{tikzcd}
+
+\begin{tikzcd}
+A \arrow[r, "ana"] \arrow[rr, "ana\circ cata"', bend right] & {Fix[RingF]} \arrow[r, "cata"] & B
 \end{tikzcd}
 \end{document} 

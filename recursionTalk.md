@@ -209,13 +209,78 @@ def cata[F[_], A](alg: F[A] => A)(implicit F: Functor[F]): Fix[F] => A = {
 ```
 And, with this, we can call it by typing `cata(evalToInt)(ringFunctor)(exp1)`.
 
+### A real example: Lists and folds
+
+---
+
+At the very begining, we talk about Lists as an essential example of recursive data type. There is as well one basic operation over Lists implemented in scala called foldLeft. What this function do is to traverse the List structure evaluating, a function with an starting value. Lest see an example of this:
+
+```scala
+val l1 = List("a", "b", "c")
+```
+![](examples/example7.png)
+
+```scala
+l1.foldLeft(0)((n, t) => n + 1)
+
+res44: Int = 3
+```
+
+We need to read foldLeft as: start with 0 and apply the function given while our next element is not Nil. This function compute the length of l1. If we look carefully, this function looks pretty similar to `cata`, where our algebra is the function acting over the base cases and then we lift it to traverse full Lists. Lets translate all of this using `Fix` and `cata`. So, lets implement our own foldLeft using cata. First, lets define the functor associated with `List`. To make it simple, we're gonna trait only `List[String]` to avoid type parameters.
+
+```scala
+sealed trait ListF[+A] 
+case object NilF extends ListF[Nothing]
+case class ConsF[A](head: String, tail: A) extends ListF[A]
+```
+And now, we can turn this `ListF` into a functor by implementing `map`:
+
+```scala
+val listOfStringFunctor = new Functor[ListF] {
+ override def map[A, B](f: A => B): ListF[A] => ListF[B] = {
+     case NilF => NilF
+     case ConsF(h, t) => ConsF(h, f(t))
+ }   
+}
+```
+
+Using `Fix` we can build our own version of `l1`:
+
+```scala
+type ListString = Fix[ListF]
+val nil = Fix[ListF](NilF)
+def cons : (String, ListString) => ListString = (h, t) =>  Fix[ListF](ConsF(h, t))
+
+val fixL1 = cons("a", cons("b", cons("c", nil)))
+```
+![](examples/example8.png)
+
+Finally, lets try to implement foldLeft using cata:
+
+```scala 
+def myFoldLeft[A](baseValue: A)(evaluator: (String, A) => A)(l: ListString): A = {
+    def alg: ListF[A] => A = {
+        case NilF => baseValue
+        case ConsF(h, t) => evaluator(h, t)
+        }
+    cata(alg)(listOfStringFunctor)(l)
+
+}
+
+myFoldLeft(0)((x, y) => y + 1)(fixL1)
+
+res35: Int = 3
+```
+
+Of course, this is just a particular case, equivalent to `List[String]`.
+
 ## F-coalgebras and Anamorphisms
 
 ---
 
 If we think about the `evalToInt` function, what this function does is to reduce a tree of operations into an Integer. Imagine that we want to do some converse function, i.e, a function that takes an Int and produces a `Ring`. The signature for this function would be `Int => RingF[Int]`. In a more general case, we can take any fixed type `A` and any functor `F` and write `A => F[A]`. Functions with the previos signature are called F-coalgebras, because of duality with F-algebreas. 
 
-To take an example of this kind of function, we can use a function that, given an integer, produces the esxpression of products of its factors. As we have done previously, lets do this for a base case (just spliting our number in a product of two others) and then we will try to lift this function to produce the full factorization of the given number. 
+To take an example of this kind of function, we can use a function that, given an integer, produces the esxpression of products of its factors. As we have done before, lets do this for a base case (just spliting our number in a product of two others) and then we will try to lift this function to produce the full factorization of the given number. 
 
 For the base case, we can write:
 
@@ -236,11 +301,11 @@ def findDivisorsOf(r: Int): RingF[Int] = {
 
 ```
 
-For example, `findDivisorsof(6)` produces `res55: RingF[Int] = Mult(3, 2)`, bu t for `findDivisorsof(12)` we only get `res55: RingF[Int] = Mult(6, 2)` and we may want to keep factorizing the 6 as `Mult(3, 2)`. To do this, we need to produce a new diagram that represent the idea of lifting this function to the `Fix` of `RingF`. This can be done by reading our first diagram, but reversing the arrows:
+For example, `findDivisorsof(6)` produces `res55: RingF[Int] = Mult(3, 2)`, but for `findDivisorsof(12)` we only get `res55: RingF[Int] = Mult(6, 2)` and we may want to keep factorizing the 6 as `Mult(3, 2)`. To do this, we need to produce a new diagram that represent the idea of lifting this function to the `Fix` of `RingF`. This can be done by reading our first diagram, but reversing the arrows:
 
 ![](examples/example6.png)
 
-And, as we did before, we only need to read this diagram to get it implementation. The direct implemnetation, following the same argumens as with `cata`: 
+And, as we did before, we only need to read this diagram to get an implementation. The direct implemnetation, following the same argumens as with `cata`is 
 
 ```scala
 def ana[F[_], A](coalg: A => F[A])(implicit F: Functor[F]): A => Fix[F] = {
@@ -252,11 +317,30 @@ As you can see, this new lifter function is called ana. And now, all we need to 
 
 ```scala
 val expression3 = ana(findDivisorsOf)(ringFunctor)(12)
+
+expression3: Fix[RingF] = Fix(
+  Mult(Fix(Mult(Fix(Elem(3)), Fix(Elem(2)))), Fix(Elem(2)))
+)
 ```
 ![](example5.png)
+
+### A real example: Streams 
+
+---
+
 ## Hylomorphisms
 
 ---
+
+Now we can build expressions from integers using `ana`and know how to reduce it using `cata` so we can combine both reading the direct diagram:
+
+![](examples/example9.png)
+
+The new function we get (`ana o cata`) is callled hylomorphism, and is pretty usefull. For example, we can use it to check that or `findDivisorsOf` and `evalToInt` rise the starting value if we did it one after another:
+
+```scala
+
+```
 
 ## Further references
 
