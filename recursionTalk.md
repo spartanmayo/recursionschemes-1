@@ -33,7 +33,7 @@ def length[A]: List[A] => Int = {
 
 We can follow every step in the recursion to find the length of a given List. 
 
-**Note:** Try to do something similar to define a recursive definition for de function _sum 2_ over Nat.
+**Note:** Try to do something similar to define a recursive definition for de efunction _sum 2_ over Nat.
 
 With these examples we can observe two behaviors:
 
@@ -378,8 +378,22 @@ def reduce[A]: RingF[Fix[RingF]] => Fix[RingF] = {
 }
 ```
 
-It looks pretty simple. You can compare it with its implementation using our first defined Ring withou
+It looks pretty simple. You can compare it with its implementation using our first defined Ring without using `Fix`:
+
+```scala
+def reduce: Ring => Ring = {
+    case Zero => Zero
+    case One => One
+    case Elem(x) => Elem(x)
+    case Add(x, y) => if (x == y) Mult(reduce(x), Elem(2)) else Add(reduce(x), reduce(y))
+    case Mult(x, y) => Mult(reduce(x), reduce(y))
+}
+```
+
+Take a look to the shape of this function. It has a lot of recursive calls in so many places, what is error prompt and, second, its to verbose, because all is the same but for the case Add(x,x). This is one of the advantage of the recursion scheme pattern. 
 
 ## Further references
 
 ---
+
+We have seen the recursion scheme pattern with lot of examples. The main functions has been presented but we have left under the hood some details and mathematica justifications of the results. If you want to get formal proofs of the equivalence of `Fix[F] = F[Fix[F]]` (called Lambeks lemma) and a presentation of .... 
