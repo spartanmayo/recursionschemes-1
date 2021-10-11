@@ -176,11 +176,15 @@ We actually have reached the first goal, i.e, to find a recursive abstractionf f
 
 If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has two functions, called fix and unfix that, as we alrready said, defines the equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
 
-![](examples/example3.png)
+<p align="center">
+    <img src="examples/example3.png"/>
+</p>      
 
 Looking a this diagram, if we want to define `m` we only need to follow the diagram and composing the functions, i.e, taking `m` as `eval o map(m) o unfix`. But, to understand it better, lets see first the case of `RingF` and `evalToInt`:
 
-![](examples/example4.png)
+<p align="center">
+    <img src="examples/example4.png"/>
+</p>      
 
 In this case, the recursive call comes from the call `.map(m)`, because `m` is the function we are defining. In this case, we can implement such function as 
 
@@ -218,7 +222,30 @@ At the very begining, we talk about Lists as an essential example of recursive d
 ```scala
 val l1 = List("a", "b", "c")
 ```
-![](examples/example7.png)
+<p align="center">
+    <img src="examples/example7.png"/>
+</p> 
+Skip to left side bar
+>
+/examples/
+Name
+Last Modified
+
+
+Skip to left side bar
+>
+/examples/
+Name
+Last Modified
+
+
+Skip to left side bar
+>
+/examples/
+Name
+Last Modified
+
+
 
 ```scala
 l1.foldLeft(0)((n, t) => n + 1)
