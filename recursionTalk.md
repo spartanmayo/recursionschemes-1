@@ -253,7 +253,10 @@ def cons : (String, ListString) => ListString = (h, t) =>  Fix[ListF](ConsF(h, t
 
 val fixL1 = cons("a", cons("b", cons("c", nil)))
 ```
-![](examples/example8.png)
+
+<p align="center">
+    <img src="examples/example8.png"/>
+</p>                            
 
 Finally, lets try to implement foldLeft using cata:
 
