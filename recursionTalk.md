@@ -313,7 +313,7 @@ def ana[F[_], A](coalg: A => F[A])(implicit F: Functor[F]): A => Fix[F] = {
 }
 ```
 
-As you can see, this new lifter function is called ana. And now, all we need to do is to call `ana(findDivisors)(ringFunctor)(n)` to get a full expresion that represent the factorization of n. For example:
+Asyou can see, this new lifter function is called ana. And now, all we need to do is to call `ana(findDivisors)(ringFunctor)(n)` to get a full expresion that represent the factorization of n. For example:
 
 ```scala
 val expression3 = ana(findDivisorsOf)(ringFunctor)(12)
@@ -339,8 +339,46 @@ Now we can build expressions from integers using `ana`and know how to reduce it 
 The new function we get (`ana o cata`) is callled hylomorphism, and is pretty usefull. For example, we can use it to check that or `findDivisorsOf` and `evalToInt` rise the starting value if we did it one after another:
 
 ```scala
+def hylo[A, B, F[_]](ev1: A => F[A])(ev2: F[B] => B)(implicit functor: Functor[F]): A => B = {
+    x => cata(ev2)(functor)((ana(ev1)(functor)(x)))
+}
 
+hylo(findDivisorsOf)(evalToInt)(ringFunctor)(12)
+---
+res40: Int = 12
 ```
+
+It works! But this is not so usefull, because we are getting the identity. Lets try to implemente a more fancy function. For example, lets write a simple fution to represent the factorization of an integer as a String. To do this, we need first a pretty print function and then simple apply hylo to it with findDivisorsOf.
+
+```scala
+def prettyPrint: RingF[String] => String = {
+    case Zero => "0"
+    case One => "1"
+    case Elem(x: Int) => x.toString
+    case Add(x, y) => x + " + " + y
+    case Mult(x, y) => x + " * " + y
+}
+
+hylo(findDivisorsOf)(prettyPrint)(ringFunctor)(12)
+
+---
+res44: String = "3 * 2 * 2"
+```
+
+## Morphisms between recursive structures
+
+---
+
+We are gonne to end this talk with one last comment about recursive strctures. We have allready seen functions to evaluate (cata) and to generate (ana) recursive data types. But what if we want to use a function between recursive data Types, for example, a function `reduce: Ring => Ring` that simplifies expresions as `x + x => 2*x`. This can be made using our `Fix` and a special kind of algebra. The algebra we are gonne use has signature `RingF[Fix[RingF]] => Fix[RingF]`, because we need to work over the general recursive case. Take a look to the implementation of this:
+
+```scala
+def reduce[A]: RingF[Fix[RingF]] => Fix[RingF] = {
+    case Add(x, y) => if (x == y) Fix[RingF](Mult(y, Fix[RingF](Elem(2)))) else Fix[RingF](Add(x,y))
+    case other => Fix[RingF](other)
+}
+```
+
+It looks pretty simple. You can compare it with its implementation using our first defined Ring withou
 
 ## Further references
 
