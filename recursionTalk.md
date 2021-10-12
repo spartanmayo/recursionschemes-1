@@ -176,9 +176,7 @@ We actually have reached the first goal, i.e, to find a recursive abstractionf f
 
 If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has two functions, called fix and unfix that, as we alrready said, defines the equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
 
-<p align="center">
-    <img src="examples/example3.png"/>
-</p>      
+    <img src="examples/example3.png" align="left"> We can define this example      
 
 Looking a this diagram, if we want to define `m` we only need to follow the diagram and composing the functions, i.e, taking `m` as `eval o map(m) o unfix`. But, to understand it better, lets see first the case of `RingF` and `evalToInt`:
 
