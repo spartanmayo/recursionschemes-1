@@ -183,7 +183,7 @@ If we take a fast recap, what we have is a functor `RingF` and our `Fix` that ca
 Looking a this diagram, if we want to define `m` we only need to follow the diagram and composing the functions, i.e, taking `m` as `eval o map(m) o unfix`. But, to understand it better, lets see first the case of `RingF` and `evalToInt`:
 
 <p align="center">
-    <img src="examples/example4.png" align="middle"/>
+    <img src="examples/example4.png"/>
 </p>      
 
 In this case, the recursive call comes from the call `.map(m)`, because `m` is the function we are defining. In this case, we can implement such function as 
