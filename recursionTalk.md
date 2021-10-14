@@ -2,13 +2,13 @@
 
 ---
 
-In this piece of work, I want to share some notions about recursion schemes. Recursion schemes are a paradigm based on the abstraction of the recursive steps and the base cases in recursive data types. I will try to provide some justifications about their utilities and a lot of examples where it can be usefull. All the exampes can be used as scala snippets and feel free to play with all the conctructions in Scastie. Enjoy!
+In this piece of work, I want to share some notions about recursion schemes. Recursion schemes are a paradigm based on the abstraction of the recursive steps and the base cases in recursive data types. I will try to provide some justifications about its utilities and and a lot of examples where it can be useful. All the examples can be used as scala snippets and feel free to play with it in Scastie, an online scala editor. Enjoy!
 
 ## Introduction
 
 ---
 
-I'm sure that all of you, in some way, has been heard about recursion. The idea of recursion lies in the usage of base definition and some rules to build new structures based on the previous one. One of the main examples are natural numbers, in the core of mathematics, and Lists in computer science. In both cases we have a base case that tell us an examples of an element of our structure. In the case of natural numbers, 0 is a natural number and for the case of Lists, Nil is a List. The next step is to provide a rule to build, inductively, new numbers and new lists. For the first one we have the basic rule _every natural number has a next element_. For lists, _every list is Nil or has a head of type A and a tail of type List[A]_.  It is trivial to see the similarities between the way of constructing this types. A simple implementetation of this two types in scala is:
+I'm sure that all of you, in some way, have heard about recursion. The idea of recursion lies in the usage of base definition and some rules to build new structures based on the previous one. One of the main examples are natural numbers, in the core of mathematics, and Lists in computer science. In both cases we have a base case that tell us an example of an element of our structure. In the case of natural numbers, the rule tell us that 0 is a natural number and for the case of Lists, Nil is a List. The next step is to provide a rule to build, inductively, new numbers and new lists. For the first one we have the basic rule _every natural number has a next element_. For lists, _every list is Nil or has a head of type A and a tail of type `List[A]`_. A simple implementetation of this two types in scala is:
 
 ```scala
 sealed trait Nat
@@ -20,9 +20,9 @@ final object Nil extends List[Nothing]
 final case class Cons[A](head: A, tail: List[A]) extends List[A]
 ```
 
-In both cases we can see the recursive construction strategy in the Cons and Suc definitions, with an argument defined by its own type. 
+In both cases we can see the recursive strategy in the `Cons` and `Suc` definitions, with an argument defined by its own type. 
 
-With every recursive structure, there are functions acting on them. We can define recursive functions acting on a inductively defined type, like Nat or Lists. For example, lets define the length of a list:
+With every recursive structure, there are functions acting on them. We can define recursive functions acting on a inductively defined type, like Nat or Lists by specifiying the image of the base cases and the image of a generic inductive step. For example, lets define the length of a list:
 
 ```scala
 def length[A]: List[A] => Int = {
@@ -30,8 +30,8 @@ def length[A]: List[A] => Int = {
     case Cons(h, t) => 1 + length(t)
 } 
 ```
-
-We can follow every step in the recursion to find the length of a given List. 
+We must read this definition as: _if the given list is Nil, its length equals 0 and, suposed we know the length of the tail, this value plus one gives the full length of the list_.
+Indeed, we can follow every step in the recursive calls to find the length of a given List. 
 
 **Note:** Try to do something similar to define a recursive definition for de efunction _sum 2_ over Nat.
 
@@ -41,7 +41,7 @@ With these examples we can observe two behaviors:
     
    2) Every function with a domain over the a recursive Type needs to traverse the structure until the base case and them iterates to produce the result.
    
-This observations are pretty well defined over the two examples. But there are some cases where the definition of the case cases (for function evaluation an recursive types) are not trivial and the recursion is not so easy to see. For these reason, it would be interesting to have a clear separation between the recursion step and the base cases definition, In fact, what we will try to build is a blueprint for general recursion The blue print is the following:
+This observations are pretty well defined over the previous examples. But there are some cases where the definition of the base cases (for function evaluation an recursive types) are not trivial. For this reason, it would be interesting to have a clear separation between the recursion step and the base cases. In fact, what we will try to build is a blueprint for general recursion wi:
 
    1) Give me a funtor F[A] and a way to evaluate it for a fixed type B (think in the evaluation of an expresion to an integer)
    
@@ -197,6 +197,11 @@ cata(exp1)
 
 res: Int = 16
 ```
+
+We can follow each step of recursion as:
+
+![](examples/animation.gif)
+
 So we are done! we achive our goal of lifting evalToInt to our recursive data type `Ring`. But, our implementation of `cata` looks pretty particular for this case. As we can see in our first diagram, we can do this for any functor and for any evaluation, i.e, an algebra over it. Lets do this in the same way, by reading the diagram:
 
 Of course, the eval function can be parametriced as any function with signature `F[A] => A`. This kind of function is called an F-algebra over the fixed type A.
@@ -225,27 +230,6 @@ val l1 = List("a", "b", "c")
 <p align="center">
     <img src="examples/example7.png"/>
 </p> 
-Skip to left side bar
->
-/examples/
-Name
-Last Modified
-
-
-Skip to left side bar
->
-/examples/
-Name
-Last Modified
-
-
-Skip to left side bar
->
-/examples/
-Name
-Last Modified
-
-
 
 ```scala
 l1.foldLeft(0)((n, t) => n + 1)
