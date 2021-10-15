@@ -64,7 +64,9 @@ case class Add(x: Ring, y: Ring) extends Ring
 case class Mult(x: Ring, y: Ring) extends Ring
 ```
 
-As we have comment in the previous section, we want to separate the base cases for the recursive steps. For this porpouse, lets imagine that our base type is Int and we want to implemente it sum and mult operations. It can be defined in scala as the following:
+Of course, the `Zero` and `One` can be used interchagely with `Elem(0)` and `ELem(1)`, but we prefere to mark this two elements as special, because they are the neutral elements of addition and multiplication.
+
+As we have comment in the previous section, we want to separate the base cases for the recursive steps. For this porpouse, lets imagine that our base type is `Int` and we want to implement sum and product operations. It can be defined in scala as the following:
 
 ```scala 
 sealed trait RingF[+A]
@@ -82,9 +84,9 @@ val expresion1 = Mult(Elem(4), Add(Elem(3), One))
 ```
 ![](examples/example.png)
 
-But, for the RingF, we are able to build just base cases like Elem(7), Add(3, 4), etc. 
+But, for the RingF, we are able to build just base cases like `Elem(7)`, `Add(3, 4)`, etc. 
 
-Lets imagine that we want to evaluate an expresion to, for example, to it associated value after resolving the operations. This can be made by the recursive function:
+Lets imagine that we want to evaluate an expresion to, for example, the value resulting from solving the operations. This can be made by the recursive function:
 
 ```scala
 def toInt: Ring => Int = {
@@ -95,7 +97,7 @@ def toInt: Ring => Int = {
     case Mult(x, y) => toInt(x) * toInt(y)
 }
 ```
- and in Case we want to define it for RingF we can simply resolve it without recursive calls:
+ and in Case we want to define it for RingF we can simply solve it without recursive calls:
  
 ```scala
 def evalToInt: RingF[Int] => Int = {
@@ -108,8 +110,9 @@ def evalToInt: RingF[Int] => Int = {
     }
 }
 ```
+We can observe that, obviously, is simpler to write `evalToInt` than `toInt`. Don't forget pur main goul, an abstraction to transform the simpler fuction into the complex one.
 
-Here is where the magic comes, if we want to evaluate, for example, a value of the form `RingF[RingF[A]]` we need first and evaluation of the form `RingF[RingF[A]] => RingF[A]` and them another evaluatuion `RingF[A] => A`. In the previous example, A is Int. The way of doing this is based on a good property of RingF, i.e it is a functor. A functor, for our porpouses, is a type constructor with the property that we can implement a way of translating functions between tipes in functions between the constructed types by the type constructor. So for this simple example, for every type A we can build a new type `RingF[A]`. Now, given a function `f: A => B` we need to know how to build a function with the signature `fmap: RingF[A] => RingF[B]`. This can be easily define and implemented in scala in the following way:
+Here is where the magic comes, if we want to evaluate, for example, a value of the form `RingF[RingF[A]]` we need first an evaluation of the form `RingF[RingF[A]] => RingF[A]` and then, another evaluatuion `RingF[A] => A`. In the previous example, A is Int. The way of doing this is based on a good property of `RingF`, i.e it is a functor. A functor, for our porpouses, is a type constructor with the property that we can implement a way of translating functions between tipes in functions between the constructed types by the type constructor. So for this simple example, for every type A we can build a new type `RingF[A]`. Now, given a function `f: A => B` we need to know how to build a function with the signature `fmap: RingF[A] => RingF[B]`. This can be easily define and implemented in scala in the following way:
 
 ```scala 
 trait Functor[F[_]] {
@@ -138,7 +141,12 @@ def liftInt: RingF[RingF[Int]] => RingF[Int] = {
 
 So, thanks to the map property we know how to lift one floor of recursion our base cases. Our goals now are to define the full recursive expresion and lift out evalToInt to the infinite floor of recursion. 
 
-The argument to do this steps can be formaly made in terms of initial objects of certain cathegory, but let me try to express the idea before geting in details.If we want to find the full recursive type thats mean that we dont case abaout the depth of the expresion of our ring, so we can think about it as a type `H` related to `RingF[A]` and with an infinity depth. Its obious that an object with this two properties must to verified that `RingF[H] = H`, read as, if we are in the infinite recursive step, we dont get nothing if we repeat the aplication of `RingF`. We have to take care with this equaliaty, is better to understand that as _All the information inside `RingF[H]` is insede `H` and the converse is also true_. The equality understood as this property is called an isomorphism between the types `H` and `RingF[H]`. This is why we prefer to call `H` as `Fix[RingF]` because it is a _fixpoint_ of the equation `RingF[H] = H`. So the final signature is `Fix[RingF] = RingF[Fix[RingF]]`. Avoiding the formal and tecnical proofs, we can just implement the previous definition. Even more, this argument works for every Functor `F[A]`, so we can simply write an abstractions like:
+Before digging into recursion, lets set some terminoloy. Given a functor `F`, any function with signature `F[A] => A` is called an F-algebra over `A`. A natural question can arise from this: **why on earth is this called algebra?**. The answer is, in some sense, easy. In mathematics, very roughtly speaking, an algebra is a set `A` and a set of operations acting on it. The only requirement over this operations is that it should be closed in `A`, i.e, if we apply a finite number of operations, the result is an element of `A`. For example, the integers forms an algebra (even more, it is a ring ;)) with the operations of product and addition. Now, the concept of F-algebra is a generalization of this idea, because the functor is defining the set of operations (`Add`, `Mult` for our `RingF`) and the function `F[A] => A` is defining the laws of solving the operations. For the case of integers, this is encoded in the function `evalToInt`. So, we can conclude that there is the same information in the `evalToInt`function and in the algebra of integer numbers.
+
+After this terminology explanation, lets go back to recursion.
+The argument to do this can be formaly made in terms of initial objects of certain cathegory, but let me try to focus on the main ideas rather than the tecnical details.
+
+If we want to find the full recursive type thats mean that we dont care about the depth of the expresion of our ring, so we can think about it as a type `H` related to `RingF[A]` and with an infinite depth. Its obious that an object with this two properties must  verify that `RingF[H] = H`, read as, if we are in the infinite recursive step, we dont get nothing if we repeat the aplication of `RingF`. We have to take care with this equaliaty, is better to understand that as _All the information inside `RingF[H]` is insede `H` and the converse is also true_. The equality understood as this property is called an isomorphism between the types `H` and `RingF[H]`. This is why we prefer to call `H` as `Fix[RingF]` because it is a _fixpoint_ of the equation `RingF[H] = H`. So the final signature is `Fix[RingF] = RingF[Fix[RingF]]`. Avoiding the formal and tecnical proofs, we can just implement the previous definition. Even more, this argument works for every Functor `F[A]`, so we can simply write an abstraction like:
 
 ```scala
 case class Fix[F[_]](value: F[Fix[F]] )
@@ -232,12 +240,12 @@ val l1 = List("a", "b", "c")
 </p> 
 
 ```scala
-l1.foldLeft(0)((n, t) => n + 1)
+l1.foldRight(0)((n, t) => n + 1)
 
 res44: Int = 3
 ```
 
-We need to read foldLeft as: start with 0 and apply the function given while our next element is not Nil. This function compute the length of l1. If we look carefully, this function looks pretty similar to `cata`, where our algebra is the function acting over the base cases and then we lift it to traverse full Lists. Lets translate all of this using `Fix` and `cata`. So, lets implement our own foldLeft using cata. First, lets define the functor associated with `List`. To make it simple, we're gonna trait only `List[String]` to avoid type parameters.
+We need to read foldRight as: start with 0 and apply the function given while our next element is not Nil. This function compute the length of l1. If we look carefully, this function looks pretty similar to `cata`, where our algebra is the function acting over the base cases and then we lift it to traverse full list. Lets translate all of this using `Fix` and `cata`. So, lets implement our own foldLeft using cata. First, lets define the functor associated with `List`. To make it simple, we're gonna trait only `List[String]` to avoid type parameters.
 
 ```scala
 sealed trait ListF[+A] 
@@ -288,6 +296,51 @@ res35: Int = 3
 
 Of course, this is just a particular case, equivalent to `List[String]`.
 
+We have build the foldRight method of `List[String]` in terms of `cata`, but we can go further. It turns out that `foldRight` is as useful as `cata` in the sense that `foldRight` recreates general recursion. The joke is: _every recursive function over a recursive data type can be defined as a foldRight_ and, this is the same as `cata`. The reason of this is that we can translate cata (in some sense) into foldRigth. Lets do this in our main example `Ring`:
+
+```scala
+def foldR[Z](e: Fix[RingF])(elem: Elem => Z)(add: (Z, Z) => Z)(mult: (Z, Z) => Z): Z = {
+    e.value match {
+        case Elem(x)  => elem(Elem(x))
+        case Add(x, y) => add(foldR(x)(elem)(add)(mult), foldR(y)(elem)(add)(mult))
+        case Mult(x, y) => mult(foldR(x)(elem)(add)(mult), foldR(y)(elem)(add)(mult))
+    }
+}
+```
+of course, we can recreate `evalToInt` using this by writing: 
+
+```scala
+a: Ring = Fix(
+  Add(
+    Fix(Add(Fix(Elem(3)), Fix(Elem(3)))),
+    Fix(Add(Fix(Elem(3)), Fix(Elem(3))))
+  )
+)
+
+foldR[Int](a)(x => x.x)((x, y) => x + y)((x,y) => x * y)
+
+res61: Int = 12
+```
+
+To justify that this is equivalent to `cata(evalToInt)(a)`, lets do some arguments about the signature of this function. First of all, the signature of foldR is:
+
+![](examples/example10.png)
+
+And, using som basic type equivalences, we can turn this last expression into 
+
+![](examples/example11.png)
+
+And, finally, the signature of this Either (that in scala are case classes of the same trait) is basically the signature of our algebra: 
+
+![](examples/example12.png)
+
+And, of course, reading the composition of arrows we get the shape of cata:
+
+![](examples/example13.png)
+
+So, af we have already see, `foldR` is exactly the same idea as `cata`, but in a more explicit way. Both of this represents the essence of recursion and can be understood as an equivalence, this is known as ....
+
+
 ## F-coalgebras and Anamorphisms
 
 ---
@@ -336,7 +389,7 @@ expression3: Fix[RingF] = Fix(
   Mult(Fix(Mult(Fix(Elem(3)), Fix(Elem(2)))), Fix(Elem(2)))
 )
 ```
-![](example5.png)
+![](examples/example5.png)
 
 ### A real example: Streams 
 
