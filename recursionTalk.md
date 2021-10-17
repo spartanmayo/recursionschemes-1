@@ -81,7 +81,9 @@ Because of the inductive rules of `Ring`, we can build a value as deep as we wan
 ```scala
 val expresion1 = Mult(Elem(4), Add(Elem(3), One))
 ```
-![](examples/example.png)
+<p align="center" >
+    <img src="examples/example.png" /> 
+</p>  
 
 But, for `RingF`, we are able to build just base cases like `Elem(7)`, `Add(3, 4)`, etc. 
 
@@ -132,7 +134,9 @@ val ringFunctor = new Functor[RingF] {
 
 We can summarize the functor behaviour in the following image:
 
-![](examples/example14.png)
+<p align="center" >
+    <img src="examples/example14.png" /> 
+</p>  
 
 For `RingF`, we simply encapsulate the image of `f` under the `RingF` constructor. Now that we know how to lift functions using the `map` property of the functor, we can lift the one step evaluation `evaltoInt` into an evaluation between `RingF[RingF[A]] => RingF[A]` by simply taking `map` with `A` as `RingF[A]` and `B` as `A` :
 
@@ -144,7 +148,9 @@ def liftInt: RingF[RingF[Int]] => RingF[Int] = {
 
 So, thanks to the map property, we know how to lift one floor of recursion our base cases. Using this, we can evaluate a two floor of recursion by simply reading the signature of our functions. The function able to evaluate this is `evalToInt(map(evalToInt)(_))` because of the following picture:
 
-![](examples/example15.png)
+<p align="center" >
+    <img src="examples/example15.png" /> 
+</p>  
 
 Our goals now are to define the full inductive expression of `RingF` and lift `evalToInt` to the infinite floor of recursion. 
 
@@ -179,7 +185,9 @@ and we can build recursive values like:
 ```scala
 val expresion2 = mult(elem(4), add(elem(3), one))
 ```
-![](examples/example1.png)
+<p align="center" >
+    <img src="examples/example1.png" /> 
+</p>  
 
 Yow can compare this with expression1. 
 
@@ -191,7 +199,7 @@ We actually have reached the first goal, i.e., to find an inductive abstraction 
 
 If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has two functions, called fix and unfix that, as we alrready said, defines the equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
 
-<p align="center" width=20>
+<p align="center" >
     <img src="examples/example3.png" /> 
 </p>      
 
@@ -331,19 +339,27 @@ res61: Int = 12
 
 To justify that this is equivalent to `cata(evalToInt)(a)`, lets do some arguments about the signature of this function. First of all, the signature of foldR is:
 
-![](examples/example10.png)
+<p align="center" >
+    <img src="examples/example10.png" /> 
+</p>  
 
 And, using som basic type equivalences, we can turn this last expression into 
 
-![](examples/example11.png)
+<p align="center" >
+    <img src="examples/example11.png" /> 
+</p>  
 
 And, finally, the signature of this Either (that in scala are case classes of the same trait) is basically the signature of our algebra: 
 
-![](examples/example12.png)
+<p align="center" >
+    <img src="examples/example12.png" /> 
+</p>  
 
 And, of course, reading the composition of arrows we get the shape of cata:
 
-![](examples/example13.png)
+<p align="center" >
+    <img src="examples/example13.png" /> 
+</p>  
 
 So, af we have already see, `foldR` is exactly the same idea as `cata`, but in a more explicit way. Both of this represents the essence of recursion and can be understood as an equivalence, this is known as ....
 
@@ -377,7 +393,9 @@ def findDivisorsOf(r: Int): RingF[Int] = {
 
 For example, `findDivisorsof(6)` produces `res55: RingF[Int] = Mult(3, 2)`, but for `findDivisorsof(12)` we only get `res55: RingF[Int] = Mult(6, 2)` and we may want to keep factorizing the 6 as `Mult(3, 2)`. To do this, we need to produce a new diagram that represent the idea of lifting this function to the `Fix` of `RingF`. This can be done by reading our first diagram, but reversing the arrows:
 
-![](examples/example6.png)
+<p align="center" >
+    <img src="examples/example6.png" /> 
+</p>  
 
 And, as we did before, we only need to read this diagram to get an implementation. The direct implemnetation, following the same argumens as with `cata`is 
 
@@ -396,7 +414,9 @@ expression3: Fix[RingF] = Fix(
   Mult(Fix(Mult(Fix(Elem(3)), Fix(Elem(2)))), Fix(Elem(2)))
 )
 ```
-![](examples/example5.png)
+<p align="center" >
+    <img src="examples/example5.png" /> 
+</p>  
 
 ### A real example: Streams 
 
@@ -408,7 +428,9 @@ expression3: Fix[RingF] = Fix(
 
 Now we can build expressions from integers using `ana`and know how to reduce it using `cata` so we can combine both reading the direct diagram:
 
-![](examples/example9.png)
+<p align="center" >
+    <img src="examples/example9.png" /> 
+</p>  
 
 The new function we get (`ana o cata`) is callled hylomorphism, and is pretty usefull. For example, we can use it to check that or `findDivisorsOf` and `evalToInt` rise the starting value if we did it one after another:
 
