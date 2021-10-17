@@ -21,4 +21,31 @@ A_f \arrow{r}{\varphi_f}& B_g
 \begin{tikzcd}
 A \arrow[r, "ana"] \arrow[rr, "cata\circ ana"', bend right] & {Fix[RingF]} \arrow[r, "cata"] & B
 \end{tikzcd}
+
+\begin{tikzcd}
+{Fix[RingF]} \arrow[r, Rightarrow] & (Elem \arrow[r] & Z) \arrow[r] & {((Z,Z)} \arrow[r, "add"] & Z) \arrow[r] & {((Z,Z)} \arrow[r, "mult"] & Z) \arrow[r, Rightarrow] & Z
+\end{tikzcd}
+
+\begin{tikzcd}
+{Fix[RingF]} \arrow[rr, Rightarrow] &  & {(Either[Elem, (Z, Z), (Z, Z)]}\arrow[r] & Z) \arrow[rr, Rightarrow] &  & Z
+\end{tikzcd}
+
+\begin{tikzcd}
+{Fix[RingF]} \arrow[rr, Rightarrow] &  & {(RingF[Z]} \arrow[r, "alg"] & Z) \arrow[r, Rightarrow] & Z
+\end{tikzcd}
+
+\begin{tikzcd}
+{Fix[RingF]} \arrow[rr, Rightarrow] \arrow[rrrr, "cata"', bend right] &  & {(RingF[Z]} \arrow[r, "alg"] & Z) \arrow[r, Rightarrow] & Z
+\end{tikzcd}
+
+
+\begin{tikzcd}
+{F[A]} \arrow[rr, "map(f)"]               & {}                          & {F[B]}                    \\
+A \arrow[rr, "f"'] \arrow[u, "F", dotted] & {} \arrow[u, "map", dotted] & B \arrow[u, "F"', dotted]
+\end{tikzcd}
+
+\begin{tikzcd}
+{RingF[RingF[Int]]} \arrow[rr, "map(evalToInt)"] \arrow[rrrr, "evalToInt\quad\circ\quad map(evalToInt)", bend left] & {}                           & {RingF[Int]} \arrow[rr, "evalToInt"] &  & Int \\
+{RingF[Int]} \arrow[rr, "evalToInt"'] \arrow[u, "RingF", dotted]                                                  & {} \arrow[u, "map"', dotted] & Int \arrow[u, "RingF"', dotted]      &  &    
+\end{tikzcd}
 \end{document} 

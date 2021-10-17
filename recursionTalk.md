@@ -2,13 +2,13 @@
 
 ---
 
-In this piece of work, I want to share some notions about recursion schemes. Recursion schemes are a paradigm based on the abstraction of the recursive steps and the base cases in recursive data types. I will try to provide some justifications about its utilities and and a lot of examples where it can be useful. All the examples can be used as scala snippets and feel free to play with it in Scastie, an online scala editor. Enjoy!
+In this piece of work, I want to share some notions about recursion schemes. Recursion schemes are a paradigm based on the abstraction of the recursive steps and the base cases. I will try to provide some justifications about its utilities and a lot of examples where it can be useful. All the examples can be used as scala snippets and feel free to play with it in [Scastie](https://scastie.scala-lang.org/), an online scala editor. Enjoy!
 
 ## Introduction
 
 ---
 
-I'm sure that all of you, in some way, have heard about recursion. The idea of recursion lies in the usage of base definition and some rules to build new structures based on the previous one. One of the main examples are natural numbers, in the core of mathematics, and Lists in computer science. In both cases we have a base case that tell us an example of an element of our structure. In the case of natural numbers, the rule tell us that 0 is a natural number and for the case of Lists, Nil is a List. The next step is to provide a rule to build, inductively, new numbers and new lists. For the first one we have the basic rule _every natural number has a next element_. For lists, _every list is Nil or has a head of type A and a tail of type `List[A]`_. A simple implementetation of this two types in scala is:
+I'm sure that all of you, in some way, have heard about recursion. The idea of recursion lies in the usage of base definition and some rules to build new structures based on the previous one. In this context, inductive and recursive constructions can be seen as points of view of the same idea. I prefer to talk about induction whenever I talk about data types and recursion referred to functions that traverse inductive types. One of the main examples are natural numbers, in mathematics, and lists in computer science. In both cases we have a base case that tell us an example of an element of our structure and rules to produce new elements. In the case of natural numbers, the base case is _0 is a natural number_ and for the case of Lists, Nil is a List. The next step is to provide a rule to build, inductively, new numbers and new lists. For the first one we have the basic rule _every natural number has a next element_ and, for lists, _every list is Nil or has a head of type A and a tail of type `List[A]`_. A simple implementation of these two types in Scala is:
 
 ```scala
 sealed trait Nat
@@ -22,7 +22,7 @@ final case class Cons[A](head: A, tail: List[A]) extends List[A]
 
 In both cases we can see the recursive strategy in the `Cons` and `Suc` definitions, with an argument defined by its own type. 
 
-With every recursive structure, there are functions acting on them. We can define recursive functions acting on a inductively defined type, like Nat or Lists by specifiying the image of the base cases and the image of a generic inductive step. For example, lets define the length of a list:
+With every structure builded inductively, there are functions acting on them. Some of these functions are known as recursive functions, which are defined by specifying the image of the base cases and the image of a generic inductive step. For example, lets define the length of a list:
 
 ```scala
 def length[A]: List[A] => Int = {
@@ -33,27 +33,26 @@ def length[A]: List[A] => Int = {
 We must read this definition as: _if the given list is Nil, its length equals 0 and, suposed we know the length of the tail, this value plus one gives the full length of the list_.
 Indeed, we can follow every step in the recursive calls to find the length of a given List. 
 
-**Note:** Try to do something similar to define a recursive definition for de efunction _sum 2_ over Nat.
-
 With these examples we can observe two behaviors:
 
-   1) Every recursive structure use its own type to define the rule to build the next iteration.
+   1) Every inductive structure uses its own type to define the rule to build the next iteration.
     
-   2) Every function with a domain over the a recursive Type needs to traverse the structure until the base case and them iterates to produce the result.
+   2) Every recursive function with domain an inductive data type needs to traverse the structure until the base case and them iterates to produce the result.
    
-This observations are pretty well defined over the previous examples. But there are some cases where the definition of the base cases (for function evaluation an recursive types) are not trivial. For this reason, it would be interesting to have a clear separation between the recursion step and the base cases. In fact, what we will try to build is a blueprint for general recursion wi:
+These observations are pretty well defined over the previous examples. But, in general, the definition of recursive functions needs to use the recursive calls in some key points and, in so many cases, these points are not so clear. This may cause errors during the definition of recursive functions. For this reason, it would be interesting to have a clear separation between the recursion step and the base cases. In fact, what we will try to build is a blueprint for general recursion. The shape of this blueprint can be resumed as:
 
-   1) Give me a funtor F[A] and a way to evaluate it for a fixed type B (think in the evaluation of an expresion to an integer)
+   1) Give me a functor `F[A]` and a way to evaluate it for a fixed type B (think in the evaluation of an expression to an integer). `F[A]` will represent a general inductive step, but without any reference to previous cases. The role of the evaluation can be seen as a single step of the recursive function.
    
-   2) I have a magic type constructor to turn F[A] into its associated recursive type and a way to lift the base case evaluations to a traversavle evaluator function acting over the recursive type.
+   2) I have a magic type constructor to turn `F[A]` into its associated inductive type and a way to lift the base case evaluations to an evaluator that traverse the inductive type.
    
-Lets do this.
+This blueprint, together with the inductive type constructor and the lifter operator is what is called recursion schemes. Lets develop these ideas.
 
-## Functors and F-algebras
+## Functors, F-algebras and Fix
 
 ---
 
-Lets start with a simple example. Imagine we want to implement the ring structure for the set of integers numbers, i.e, the set with multiplication and addition. The recursive version of this is:
+As we have told before, we want to build an abstraction of general recursion. I will try to build all these ideas over an example, to keep the focus on the intuition.
+Lets start with a simple example. Imagine we want to implement the ring structure of the set of integers, i.e. , the set together with multiplication and addition. A simple implementation of this type would be:
 
 ```scala
 sealed trait Ring 
@@ -64,9 +63,9 @@ case class Add(x: Ring, y: Ring) extends Ring
 case class Mult(x: Ring, y: Ring) extends Ring
 ```
 
-Of course, the `Zero` and `One` can be used interchagely with `Elem(0)` and `ELem(1)`, but we prefere to mark this two elements as special, because they are the neutral elements of addition and multiplication.
+Of course, the `Zero` and `One` can be used interchangeably with `Elem(0)` and `ELem(1)`, but we prefer to keep these two elements as special, because they are the neutral elements of addition and multiplication.
 
-As we have comment in the previous section, we want to separate the base cases for the recursive steps. For this porpouse, lets imagine that our base type is `Int` and we want to implement sum and product operations. It can be defined in scala as the following:
+As we said before, we want to separate a general step from the inductive steps.  For this purpose, let's imagine that we have a base type `A` and we want to implement sum and product operations of just two elements of that type. It can be defined in Scala as:
 
 ```scala 
 sealed trait RingF[+A]
@@ -77,16 +76,16 @@ case class Add[A](x: A, y: A) extends RingF[A]
 case class Mult[A](x:A, y: A) extends RingF[A]
 ```
 
-For the definition of Ring, we can build a value as deep as we want, for example:
+Because of the inductive rules of `Ring`, we can build a value as deep as we want, for example:
 
 ```scala
 val expresion1 = Mult(Elem(4), Add(Elem(3), One))
 ```
 ![](examples/example.png)
 
-But, for the RingF, we are able to build just base cases like `Elem(7)`, `Add(3, 4)`, etc. 
+But, for `RingF`, we are able to build just base cases like `Elem(7)`, `Add(3, 4)`, etc. 
 
-Lets imagine that we want to evaluate an expresion to, for example, the value resulting from solving the operations. This can be made by the recursive function:
+Imagine that we want to evaluate the expressions produced by `Ring` and `RingF`, for example, the value resulting from solving the operations. For `Ring`, this can be made by the recursive function:
 
 ```scala
 def toInt: Ring => Int = {
@@ -97,7 +96,7 @@ def toInt: Ring => Int = {
     case Mult(x, y) => toInt(x) * toInt(y)
 }
 ```
- and in Case we want to define it for RingF we can simply solve it without recursive calls:
+And, in Case we want to define it for `RingF` we can simply solve it without recursive calls:
  
 ```scala
 def evalToInt: RingF[Int] => Int = {
@@ -110,9 +109,9 @@ def evalToInt: RingF[Int] => Int = {
     }
 }
 ```
-We can observe that, obviously, is simpler to write `evalToInt` than `toInt`. Don't forget pur main goul, an abstraction to transform the simpler fuction into the complex one.
+We can observe that, obviously, is simpler to write `evalToInt` than `toInt`. Don't forget our main goal, an abstraction to transform the simpler fuction into the (a bit) complex one.
 
-Here is where the magic comes, if we want to evaluate, for example, a value of the form `RingF[RingF[A]]` we need first an evaluation of the form `RingF[RingF[A]] => RingF[A]` and then, another evaluatuion `RingF[A] => A`. In the previous example, A is Int. The way of doing this is based on a good property of `RingF`, i.e it is a functor. A functor, for our porpouses, is a type constructor with the property that we can implement a way of translating functions between tipes in functions between the constructed types by the type constructor. So for this simple example, for every type A we can build a new type `RingF[A]`. Now, given a function `f: A => B` we need to know how to build a function with the signature `fmap: RingF[A] => RingF[B]`. This can be easily define and implemented in scala in the following way:
+Here is where the magic comes, if we want to evaluate, for example, a value of the form `RingF[RingF[A]]`, i.e., an expression of deeph two,  we need first an evaluation of the form `RingF[RingF[A]] => RingF[A]` and then, another evaluatuion `RingF[A] => A`. In the previous example, `A` is `Int`. The way of doing this is based on a good property of `RingF`: it is a functor. A functor, for our porpouses, is a type constructor with the property that we can implement a way of translating functions between types in functions between the constructed types. So for this simple example, for every type `A` we can build a new type `RingF[A]`. Now, given a function `f: A => B`, we know how to build a function with the signature `map: RingF[A] => RingF[B]`. This can be easily define and implemented in Scala:
 
 ```scala 
 trait Functor[F[_]] {
@@ -131,7 +130,11 @@ val ringFunctor = new Functor[RingF] {
 
 ```
 
-we simply encapsulate the image of f under the RingF constructor. Now that we know how to lift functions using the map property of the functor, we can lift the first step evaluation evaltoInt into a evaluation between `RingF[RingF[A]] => RingF[A]` by simply taking map with `A` as `RingF[A]` and `B` as `A` :
+We can summarize the functor behaviour in the following image:
+
+![](examples/example14.png)
+
+For `RingF`, we simply encapsulate the image of `f` under the `RingF` constructor. Now that we know how to lift functions using the `map` property of the functor, we can lift the one step evaluation `evaltoInt` into an evaluation between `RingF[RingF[A]] => RingF[A]` by simply taking `map` with `A` as `RingF[A]` and `B` as `A` :
 
 ```scala
 def liftInt: RingF[RingF[Int]] => RingF[Int] = {
@@ -139,14 +142,18 @@ def liftInt: RingF[RingF[Int]] => RingF[Int] = {
 }
 ```
 
-So, thanks to the map property we know how to lift one floor of recursion our base cases. Our goals now are to define the full recursive expresion and lift out evalToInt to the infinite floor of recursion. 
+So, thanks to the map property, we know how to lift one floor of recursion our base cases. Using this, we can evaluate a two floor of recursion by simply reading the signature of our functions. The function able to evaluate this is `evalToInt(map(evalToInt)(_))` because of the following picture:
 
-Before digging into recursion, lets set some terminoloy. Given a functor `F`, any function with signature `F[A] => A` is called an F-algebra over `A`. A natural question can arise from this: **why on earth is this called algebra?**. The answer is, in some sense, easy. In mathematics, very roughtly speaking, an algebra is a set `A` and a set of operations acting on it. The only requirement over this operations is that it should be closed in `A`, i.e, if we apply a finite number of operations, the result is an element of `A`. For example, the integers forms an algebra (even more, it is a ring ;)) with the operations of product and addition. Now, the concept of F-algebra is a generalization of this idea, because the functor is defining the set of operations (`Add`, `Mult` for our `RingF`) and the function `F[A] => A` is defining the laws of solving the operations. For the case of integers, this is encoded in the function `evalToInt`. So, we can conclude that there is the same information in the `evalToInt`function and in the algebra of integer numbers.
+![](examples/example15.png)
 
-After this terminology explanation, lets go back to recursion.
-The argument to do this can be formaly made in terms of initial objects of certain cathegory, but let me try to focus on the main ideas rather than the tecnical details.
+Our goals now are to define the full inductive expression of `RingF` and lift `evalToInt` to the infinite floor of recursion. 
 
-If we want to find the full recursive type thats mean that we dont care about the depth of the expresion of our ring, so we can think about it as a type `H` related to `RingF[A]` and with an infinite depth. Its obious that an object with this two properties must  verify that `RingF[H] = H`, read as, if we are in the infinite recursive step, we dont get nothing if we repeat the aplication of `RingF`. We have to take care with this equaliaty, is better to understand that as _All the information inside `RingF[H]` is insede `H` and the converse is also true_. The equality understood as this property is called an isomorphism between the types `H` and `RingF[H]`. This is why we prefer to call `H` as `Fix[RingF]` because it is a _fixpoint_ of the equation `RingF[H] = H`. So the final signature is `Fix[RingF] = RingF[Fix[RingF]]`. Avoiding the formal and tecnical proofs, we can just implement the previous definition. Even more, this argument works for every Functor `F[A]`, so we can simply write an abstraction like:
+Before digging into recursion, lets set some terminology. Given a functor `F`, any function with signature `F[A] => A` is called an F-algebra over `A`. A natural question can arise from this: **why on earth is this called algebra?**. In mathematics, very roughly speaking, an algebra is a set `A` and a set of operations acting on it. The only requirement over this operations is that it should be closed in `A`, i.e., if we apply a finite number of operations, the result is an element of `A`. For example, the integers forms an algebra (even more, it is a ring) with the operations of product and addition. Now, the concept of F-algebra is a generalization of this idea, because the functor is defining the set of operations (`Add`, `Mult` for our `RingF`) and the function `F[A] => A` is defining the laws of solving the operations. For the case of integers, this is encoded in the function `evalToInt`. So, we can conclude that there is the same information in the `evalToInt`function and in the algebra of integer numbers.
+
+After this explanation, lets go back to recursion.
+The argument to do this can be formally made in terms of initial objects of certain categories, but let me try to focus on the main ideas rather than the technical details.
+
+If we want to find the full inductive behind `RingF` type that's mean that we don't care about the depth of the expression of our ring, so we can think about it as a type `H` related to `ring[A]` and with an infinite depth. It's obvious that an object with this property must verify, in some sense, that `ring[H] = H`, read as: _if we are in a full general inductive step, we don't get nothing if we repeat the application of `RingF`_. So, we can rephrase the equality as: _All the information inside `ring[H]` is inside `H` and the converse is also true_. The equality understood as this property is called an isomorphism between the types `H` and `RingF[H]`. This is why we prefer to call `H` as `Fix[RingF]` because it is a _fixpoint_ of the equation `RingF[X] = X`. So the final signature is `Fix[RingF] = RingF[Fix[RingF]]`. Avoiding the formal and technical proofs, we can just implement the previous definition. Even more, this argument works for every Functor `F[A]`, so we can simply write an abstraction like:
 
 ```scala
 case class Fix[F[_]](value: F[Fix[F]] )
@@ -155,9 +162,9 @@ object Fix {
   def unfix[F[_]]: Fix[F] => F[Fix[F]] = f => f.value
 }
 ```
-fix and unfix defines the way of translating information back and forth (this functions defines the isomorphism of the fixpoint).
+`fix` and `unfix` defines the way of translating information back and forth (these functions defines the isomorphism of the fixpoint).
 
-Now, we can build our recursive type Ring by simply fixing the RingF functor:
+Now, we can build our inductive type `Ring` by simply fixing the `RingF` functor:
 
 ```scala
 type Ring = Fix[RingF]
@@ -176,16 +183,16 @@ val expresion2 = mult(elem(4), add(elem(3), one))
 
 Yow can compare this with expression1. 
 
-We actually have reached the first goal, i.e, to find a recursive abstractionf for our starting, base cased, functor `RingF`. What its left is to take oru way to evaluate this recursive data type starting with our `evalToInt` function.
+We actually have reached the first goal, i.e., to find an inductive abstraction for our starting functor `RingF`. What its left is to take our way to evaluate this data type starting with our `evalToInt` function.
 
-## F-algebras and Catamorphisms
+### Catamorphisms
 
 ----
 
 If we take a fast recap, what we have is a functor `RingF` and our `Fix` that can transform our functor into a recursive data Type. The `Fix[]` type constructor has two functions, called fix and unfix that, as we alrready said, defines the equality `Fix[F] = F[Fix[F]]` for any functor. Our goal of lifting `evalToInt: RingF[Int] => Int` can be translated to find a function `m: Fix[F] => Int` related to `evalToInt`. Lest make a simple diagram that represent all this ideas
 
 <p align="center" width=20>
-    <img src="examples/example3.png" /> this is an examples
+    <img src="examples/example3.png" /> 
 </p>      
 
 Looking a this diagram, if we want to define `m` we only need to follow the diagram and composing the functions, i.e, taking `m` as `eval o map(m) o unfix`. But, to understand it better, lets see first the case of `RingF` and `evalToInt`:
